@@ -12,8 +12,13 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+# Get API key from environment (prioritize system environment variable)
+api_key = os.environ.get('ANTHROPIC_API_KEY') or os.getenv('ANTHROPIC_API_KEY')
+if not api_key:
+    print("WARNING: ANTHROPIC_API_KEY is not set. The application may not work correctly.")
+
 # Initialize Anthropic client
-client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+client = anthropic.Anthropic(api_key=api_key) if api_key else None
 
 @app.route('/')
 def index():
@@ -61,6 +66,9 @@ def fetch_url():
 def generate_homepage():
     """Generate homepage using AI"""
     try:
+        if not client:
+            return jsonify({'error': 'API key is not configured. Please set ANTHROPIC_API_KEY environment variable.'}), 500
+
         data = request.json
         reference_html = data.get('referenceHtml', '')
         source_html = data.get('sourceHtml', '')
